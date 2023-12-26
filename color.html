@@ -1,113 +1,116 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/spectrum/1.8.1/spectrum.min.css" />
-    <style>
-        body {
-            margin: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            background-color: #f0f0f0;
-            transition: background-color 0.3s ease;
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const canvas = document.getElementById('drawingCanvas');
+        const ctx = canvas.getContext('2d');
+        const thicknessSlider = document.getElementById('thicknessSlider');
+        const opacitySlider = document.getElementById('opacitySlider');
+        const exportButton = document.getElementById('exportButton');
+        const importInput = document.getElementById('importInput');
+        const eraserButton = document.getElementById('eraserButton');
+        let isDrawing = false;
+        let isErasing = false;
+
+        function startDrawing(e) {
+            isDrawing = true;
+            draw(e);
         }
 
-        .dark-mode {
-            background-color: #1a1a1a;
-            color: #fff;
+        function stopDrawing() {
+            isDrawing = false;
+            ctx.beginPath();
         }
 
-        #canvas-container {
-            position: relative;
-            border: 1px solid #ccc;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
+        function draw(e) {
+            if (!isDrawing) return;
+
+            ctx.lineWidth = thicknessSlider.value;
+            if (isErasing) {
+                ctx.globalCompositeOperation = 'destination-out';
+            } else {
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.strokeStyle = $('#colorPicker').spectrum('get').toHexString();
+            }
+            ctx.globalAlpha = opacitySlider.value;
+
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            ctx.lineTo(x, y);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(x, y);
         }
 
-        #drawingCanvas {
-            display: block;
+        function changeThickness() {
+            ctx.lineWidth = thicknessSlider.value;
         }
 
-        #menu {
-            position: fixed;
-            top: 10px;
-            left: 10px;
-            z-index: 2;
+        function changeOpacity() {
+            ctx.globalAlpha = opacitySlider.value;
         }
 
-        #toggleMode {
-            cursor: pointer;
+        function exportDrawing() {
+            const fileName = prompt('Enter a filename');
+            if (!fileName) return;
+
+            const prefix = fileName.replace(/\.[^/.]+$/, '');
+            const suffix = ".e7446dshwjsuauwzsduyauw";
+            const dataURL = canvas.toDataURL();
+            const a = document.createElement('a');
+            a.href = dataURL;
+            a.download = prefix + suffix;
+            a.click();
         }
 
-        #modeModal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            justify-content: center;
-            align-items: center;
+        function importDrawing() {
+            const file = importInput.files[0];
+
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    const img = new Image();
+                    img.onload = function () {
+                        ctx.drawImage(img, 0, 0);
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
         }
 
-        #modeModalContent {
-            background: #fff;
-            padding: 20px;
-            border-radius: 8px;
+        function toggleEraser() {
+            isErasing = !isErasing;
+            eraserButton.classList.toggle('active', isErasing);
         }
-    </style>
-</head>
-<body>
-    <div id="menu">
-        <button id="toggleMode">Toggle Mode</button>
-    </div>
-    <div id="modeModal">
-        <div id="modeModalContent">
-            <h2>Select Mode</h2>
-            <label for="darkMode">Dark Mode</label>
-            <input type="radio" id="darkMode" name="mode" value="dark" checked>
-            <label for="lightMode">Light Mode</label>
-            <input type="radio" id="lightMode" name="mode" value="light">
-            <button id="applyMode">Apply</button>
-        </div>
-    </div>
-    <div id="canvas-container">
-        <canvas id="drawingCanvas" width="1200" height="800"></canvas>
-    </div>
-    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/spectrum/1.8.1/spectrum.min.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const canvas = document.getElementById('drawingCanvas');
-            const ctx = canvas.getContext('2d');
-            const toggleModeButton = document.getElementById('toggleMode');
-            const modeModal = document.getElementById('modeModal');
-            const applyModeButton = document.getElementById('applyMode');
 
-            toggleModeButton.addEventListener('click', function () {
-                modeModal.style.display = 'flex';
-            });
+        function updateCursor(e) {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
 
-            applyModeButton.addEventListener('click', function () {
-                const darkModeRadio = document.getElementById('darkMode');
-                const mode = darkModeRadio.checked ? 'dark' : 'light';
+            document.getElementById('drawingCanvas').style.cursor = `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="%23${$('#colorPicker').spectrum('get').toHex()}" viewBox="0 0 16 16"><circle cx="8" cy="8" r="${thicknessSlider.value / 2}" /></svg>') ${x} ${y}, auto`;
+        }
 
-                document.body.classList.toggle('dark-mode', mode === 'dark');
-                modeModal.style.display = 'none';
-            });
+        exportButton.addEventListener('click', exportDrawing);
+        importInput.addEventListener('change', importDrawing);
 
-            $('#drawingCanvas').spectrum({
-                type: "color",
-                showPalette: false,
-                showButtons: false,
-                showInput: true,
-                preferredFormat: "hex"
-            });
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseout', stopDrawing);
+
+        eraserButton.addEventListener('click', toggleEraser);
+
+        $('#colorPicker').spectrum({
+            type: "color",
+            showPalette: false,
+            showButtons: false,
+            showInput: true,
+            preferredFormat: "hex"
         });
-    </script>
-</body>
-</html>
+    });
+</script>
