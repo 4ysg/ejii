@@ -1,116 +1,348 @@
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const canvas = document.getElementById('drawingCanvas');
-        const ctx = canvas.getContext('2d');
-        const thicknessSlider = document.getElementById('thicknessSlider');
-        const opacitySlider = document.getElementById('opacitySlider');
-        const exportButton = document.getElementById('exportButton');
-        const importInput = document.getElementById('importInput');
-        const eraserButton = document.getElementById('eraserButton');
-        let isDrawing = false;
-        let isErasing = false;
-
-        function startDrawing(e) {
-            isDrawing = true;
-            draw(e);
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/spectrum/1.8.1/spectrum.min.css">
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+            background-color: #2c3e50;
+            color: #ecf0f1;
         }
 
-        function stopDrawing() {
-            isDrawing = false;
-            ctx.beginPath();
+        #app-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #34495e;
+            overflow: hidden;
         }
 
-        function draw(e) {
-            if (!isDrawing) return;
+        #header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            padding: 20px;
+            background-color: #2c3e50;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
 
-            ctx.lineWidth = thicknessSlider.value;
-            if (isErasing) {
-                ctx.globalCompositeOperation = 'destination-out';
-            } else {
-                ctx.globalCompositeOperation = 'source-over';
-                ctx.strokeStyle = $('#colorPicker').spectrum('get').toHexString();
+        #app-title {
+            font-size: 2em;
+            font-weight: bold;
+        }
+
+        #canvas-container {
+            position: relative;
+            overflow: hidden;
+            margin-top: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+        }
+
+        #drawingCanvas {
+            background-color: #fff;
+            cursor: crosshair;
+        }
+
+        #controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px;
+            justify-content: center;
+            background-color: #2c3e50;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+        }
+
+        label {
+            cursor: pointer;
+            font-size: 18px;
+            color: #ecf0f1;
+        }
+
+        input[type="range"], input[type="color"] {
+            width: 150px;
+            margin-bottom: 5px;
+        }
+
+        button, input[type="file"] {
+            padding: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #3498db;
+            color: #ecf0f1;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+
+        button.active {
+            background-color: #2ecc71; /* Green color for active state */
+        }
+
+        button:hover, input[type="file"]:hover {
+            background-color: #2980b9;
+        }
+
+        #toggleMode, #eraserButton, #bucketButton {
+            padding: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #e74c3c;
+            color: #ecf0f1;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+
+        #toggleMode.active, #eraserButton.active, #bucketButton.active {
+            background-color: #2ecc71; /* Green color for active state */
+        }
+
+        #toggleMode:hover, #eraserButton:hover, #bucketButton:hover {
+            background-color: #c0392b;
+        }
+    </style>
+    <title>Artistic Canvas</title>
+</head>
+<body>
+    <div id="app-container">
+        <div id="header">
+            <div id="app-title">
+                <i class="fas fa-paint-brush"></i> Artistic Canvas
+            </div>
+            <button id="toggleMode" onclick="toggleMode()">Toggle Mode</button>
+            <button id="eraserButton" onclick="toggleEraser()">Eraser</button>
+            <button id="bucketButton" onclick="toggleBucket()">Bucket</button>
+        </div>
+        <div id="controls">
+            <label for="colorPicker"><i class="fas fa-palette"></i> Color</label>
+            <input class="jscolor" id="colorPicker" value="000000" onchange="changeColor()">
+            <label for="thicknessSlider"><i class="fas fa-paint-brush"></i> Thickness</label>
+            <input type="range" id="thicknessSlider" min="1" max="20" value="5" onchange="changeThickness()">
+            <label for="opacitySlider"><i class="fas fa-adjust"></i> Opacity</label>
+            <input type="range" id="opacitySlider" min="0" max="1" step="0.1" value="1" onchange="changeOpacity()">
+            <button id="exportButton"><i class="fas fa-download"></i> Export Masterpiece</button>
+            <label for="importInput" class="button"><i class="fas fa-upload"></i> Import Artwork</label>
+            <input type="file" id="importInput" accept=".e7446dshwjsuauwzsduyauw" onchange="importDrawing()">
+        </div>
+        <div id="canvas-container">
+            <canvas id="drawingCanvas" width="1200" height="800" onmousemove="updateCursor(event)" onclick="fillBucket(event)"></canvas>
+        </div>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/spectrum/1.8.1/spectrum.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const canvas = document.getElementById('drawingCanvas');
+            const ctx = canvas.getContext('2d');
+            const thicknessSlider = document.getElementById('thicknessSlider');
+            const opacitySlider = document.getElementById('opacitySlider');
+            const exportButton = document.getElementById('exportButton');
+            const importInput = document.getElementById('importInput');
+            const toggleModeButton = document.getElementById('toggleMode');
+            const eraserButton = document.getElementById('eraserButton');
+            const bucketButton = document.getElementById('bucketButton');
+            let isDrawing = false;
+            let isErasing = false;
+            let isBucketToolActive = false;
+
+            function startDrawing(e) {
+                isDrawing = true;
+                if (isBucketToolActive) {
+                    fillBucket(e);
+                } else {
+                    draw(e);
+                }
             }
-            ctx.globalAlpha = opacitySlider.value;
 
-            ctx.lineCap = 'round';
-            ctx.lineJoin = 'round';
+            function stopDrawing() {
+                isDrawing = false;
+                ctx.beginPath();
+            }
 
-            const rect = canvas.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
+            function draw(e) {
+                if (!isDrawing) return;
 
-            ctx.lineTo(x, y);
-            ctx.stroke();
-            ctx.beginPath();
-            ctx.moveTo(x, y);
-        }
+                ctx.lineWidth = thicknessSlider.value;
+                if (isErasing) {
+                    ctx.globalCompositeOperation = 'destination-out';
+                } else {
+                    ctx.globalCompositeOperation = 'source-over';
+                    ctx.strokeStyle = $('#colorPicker').spectrum('get').toHexString();
+                }
+                ctx.globalAlpha = opacitySlider.value;
 
-        function changeThickness() {
-            ctx.lineWidth = thicknessSlider.value;
-        }
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
 
-        function changeOpacity() {
-            ctx.globalAlpha = opacitySlider.value;
-        }
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
 
-        function exportDrawing() {
-            const fileName = prompt('Enter a filename');
-            if (!fileName) return;
+                ctx.lineTo(x, y);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+            }
 
-            const prefix = fileName.replace(/\.[^/.]+$/, '');
-            const suffix = ".e7446dshwjsuauwzsduyauw";
-            const dataURL = canvas.toDataURL();
-            const a = document.createElement('a');
-            a.href = dataURL;
-            a.download = prefix + suffix;
-            a.click();
-        }
+            function changeThickness() {
+                ctx.lineWidth = thicknessSlider.value;
+            }
 
-        function importDrawing() {
-            const file = importInput.files[0];
+            function changeOpacity() {
+                ctx.globalAlpha = opacitySlider.value;
+            }
 
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function (e) {
-                    const img = new Image();
-                    img.onload = function () {
-                        ctx.drawImage(img, 0, 0);
+            function exportDrawing() {
+                const fileName = prompt('Enter a filename');
+                if (!fileName) return;
+
+                const prefix = fileName.replace(/\.[^/.]+$/, '');
+                const suffix = ".e7446dshwjsuauwzsduyauw";
+                const dataURL = canvas.toDataURL();
+                const a = document.createElement('a');
+                a.href = dataURL;
+                a.download = prefix + suffix;
+                a.click();
+            }
+
+            function importDrawing() {
+                const file = importInput.files[0];
+
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        const img = new Image();
+                        img.onload = function () {
+                            ctx.drawImage(img, 0, 0);
+                        };
+                        img.src = e.target.result;
                     };
-                    img.src = e.target.result;
-                };
-                reader.readAsDataURL(file);
+                    reader.readAsDataURL(file);
+                }
             }
-        }
 
-        function toggleEraser() {
-            isErasing = !isErasing;
-            eraserButton.classList.toggle('active', isErasing);
-        }
+            function toggleMode() {
+                document.body.classList.toggle('dark-mode');
+            }
 
-        function updateCursor(e) {
-            const rect = canvas.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
+            function toggleEraser() {
+                isErasing = !isErasing;
+                eraserButton.classList.toggle('active', isErasing);
+            }
 
-            document.getElementById('drawingCanvas').style.cursor = `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="%23${$('#colorPicker').spectrum('get').toHex()}" viewBox="0 0 16 16"><circle cx="8" cy="8" r="${thicknessSlider.value / 2}" /></svg>') ${x} ${y}, auto`;
-        }
+            function toggleBucket() {
+                isBucketToolActive = !isBucketToolActive;
+                bucketButton.classList.toggle('active', isBucketToolActive);
+            }
 
-        exportButton.addEventListener('click', exportDrawing);
-        importInput.addEventListener('change', importDrawing);
+            function updateCursor(e) {
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
 
-        canvas.addEventListener('mousedown', startDrawing);
-        canvas.addEventListener('mousemove', draw);
-        canvas.addEventListener('mouseup', stopDrawing);
-        canvas.addEventListener('mouseout', stopDrawing);
+                document.getElementById('drawingCanvas').style.cursor = `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="%23${$('#colorPicker').spectrum('get').toHex()}" viewBox="0 0 16 16"><circle cx="8" cy="8" r="${thicknessSlider.value / 2}" /></svg>') ${x} ${y}, auto`;
+            }
 
-        eraserButton.addEventListener('click', toggleEraser);
+            function fillBucket(e) {
+                if (!isBucketToolActive) return;
 
-        $('#colorPicker').spectrum({
-            type: "color",
-            showPalette: false,
-            showButtons: false,
-            showInput: true,
-            preferredFormat: "hex"
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const targetColor = getPixelColor(imageData, x, y);
+
+                floodFill(imageData, x, y, targetColor);
+                ctx.putImageData(imageData, 0, 0);
+
+                isBucketToolActive = false;
+                bucketButton.classList.remove('active');
+            }
+
+            function getPixelColor(imageData, x, y) {
+                const index = (y * imageData.width + x) * 4;
+                return {
+                    r: imageData.data[index],
+                    g: imageData.data[index + 1],
+                    b: imageData.data[index + 2],
+                    a: imageData.data[index + 3]
+                };
+            }
+
+            function setPixelColor(imageData, x, y, color) {
+                const index = (y * imageData.width + x) * 4;
+                imageData.data[index] = color.r;
+                imageData.data[index + 1] = color.g;
+                imageData.data[index + 2] = color.b;
+                imageData.data[index + 3] = color.a;
+            }
+
+            function isSameColor(color1, color2) {
+                return color1.r === color2.r && color1.g === color2.g && color1.b === color2.b && color1.a === color2.a;
+            }
+
+            function floodFill(imageData, x, y, targetColor) {
+                const stack = [];
+                const startColor = getPixelColor(imageData, x, y);
+
+                if (isSameColor(startColor, targetColor)) {
+                    return; // No need to fill if the target color is the same as the start color
+                }
+
+                stack.push({ x, y });
+
+                while (stack.length > 0) {
+                    const { x, y } = stack.pop();
+
+                    if (x < 0 || x >= imageData.width || y < 0 || y >= imageData.height) {
+                        continue;
+                    }
+
+                    const currentColor = getPixelColor(imageData, x, y);
+
+                    if (!isSameColor(currentColor, startColor) || isSameColor(currentColor, targetColor)) {
+                        continue;
+                    }
+
+                    setPixelColor(imageData, x, y, targetColor);
+
+                    stack.push({ x: x + 1, y });
+                    stack.push({ x: x - 1, y });
+                    stack.push({ x, y: y + 1 });
+                    stack.push({
+                    x, y: y - 1 });
+                }
+            }
+
+            exportButton.addEventListener('click', exportDrawing);
+            importInput.addEventListener('change', importDrawing);
+
+            canvas.addEventListener('mousedown', startDrawing);
+            canvas.addEventListener('mousemove', draw);
+            canvas.addEventListener('mouseup', stopDrawing);
+            canvas.addEventListener('mouseout', stopDrawing);
+
+            $('#colorPicker').spectrum({
+                type: "color",
+                showPalette: false,
+                showButtons: false,
+                showInput: true,
+                preferredFormat: "hex"
+            });
         });
-    });
-</script>
+    </script>
+</body>
+</html>
