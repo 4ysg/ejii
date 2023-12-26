@@ -219,7 +219,7 @@
                 const x = e.clientX - rect.left;
                 const y = e.clientY - rect.top;
 
-                document.getElementById('drawingCanvas').style.cursor = `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="%23${$('#colorPicker').spectrum('get').toHex()}" viewBox="0 0 16 16"><circle cx="8" cy="8" r="${thicknessSlider.value / 2}" /></svg>') ${thicknessSlider.value / 2} ${thicknessSlider.value / 2}, auto`;
+                document.getElementById('drawingCanvas').style.cursor = `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="%23${$('#colorPicker').spectrum('get').toHex()}" viewBox="0 0 16 16"><circle cx="8" cy="8" r="${thicknessSlider.value / 2}" /></svg>') ${x} ${y}, auto`;
             }
 
             exportButton.addEventListener('click', exportDrawing);
