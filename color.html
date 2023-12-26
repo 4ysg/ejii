@@ -49,6 +49,7 @@
 
         #drawingCanvas {
             background-color: #fff;
+            cursor: crosshair;
         }
 
         #controls {
@@ -123,108 +124,4 @@
             <input type="range" id="opacitySlider" min="0" max="1" step="0.1" value="1" onchange="changeOpacity()">
             <button id="exportButton"><i class="fas fa-download"></i> Export Masterpiece</button>
             <label for="importInput" class="button"><i class="fas fa-upload"></i> Import Artwork</label>
-            <input type="file" id="importInput" accept=".e7446dshwjsuauwzsduyauw" onchange="importDrawing()">
-        </div>
-        <div id="canvas-container">
-            <canvas id="drawingCanvas" width="1200" height="800"></canvas>
-        </div>
-    </div>
-    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/spectrum/1.8.1/spectrum.min.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const canvas = document.getElementById('drawingCanvas');
-            const ctx = canvas.getContext('2d');
-            const thicknessSlider = document.getElementById('thicknessSlider');
-            const opacitySlider = document.getElementById('opacitySlider');
-            const exportButton = document.getElementById('exportButton');
-            const importInput = document.getElementById('importInput');
-            const toggleModeButton = document.getElementById('toggleMode');
-            let isDrawing = false;
-
-            function startDrawing(e) {
-                isDrawing = true;
-                draw(e);
-            }
-
-            function stopDrawing() {
-                isDrawing = false;
-                ctx.beginPath();
-            }
-
-            function draw(e) {
-                if (!isDrawing) return;
-
-                ctx.lineWidth = thicknessSlider.value;
-                ctx.strokeStyle = $('#colorPicker').spectrum('get').toHexString();
-                ctx.globalAlpha = opacitySlider.value;
-
-                ctx.lineCap = 'round';
-                ctx.lineJoin = 'round';
-
-                ctx.lineTo(e.clientX - canvas.offsetLeft, e.clientY - canvas.offsetTop);
-                ctx.stroke();
-                ctx.beginPath();
-                ctx.moveTo(e.clientX - canvas.offsetLeft, e.clientY - canvas.offsetTop);
-            }
-
-            function changeThickness() {
-                ctx.lineWidth = thicknessSlider.value;
-            }
-
-            function changeOpacity() {
-                ctx.globalAlpha = opacitySlider.value;
-            }
-
-            function exportDrawing() {
-                const fileName = prompt('Enter a filename');
-                if (!fileName) return;
-
-                const prefix = fileName.replace(/\.[^/.]+$/, '');
-                const suffix = ".e7446dshwjsuauwzsduyauw";
-                const dataURL = canvas.toDataURL();
-                const a = document.createElement('a');
-                a.href = dataURL;
-                a.download = prefix + suffix;
-                a.click();
-            }
-
-            function importDrawing() {
-                const file = importInput.files[0];
-
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = function (e) {
-                        const img = new Image();
-                        img.onload = function () {
-                            ctx.drawImage(img, 0, 0);
-                        };
-                        img.src = e.target.result;
-                    };
-                    reader.readAsDataURL(file);
-                }
-            }
-
-            function toggleMode() {
-                document.body.classList.toggle('dark-mode');
-            }
-
-            exportButton.addEventListener('click', exportDrawing);
-            importInput.addEventListener('change', importDrawing);
-
-            canvas.addEventListener('mousedown', startDrawing);
-            canvas.addEventListener('mousemove', draw);
-            canvas.addEventListener('mouseup', stopDrawing);
-            canvas.addEventListener('mouseout', stopDrawing);
-
-            $('#colorPicker').spectrum({
-                type: "color",
-                showPalette: false,
-                showButtons: false,
-                showInput: true,
-                preferredFormat: "hex"
-            });
-        });
-    </script>
-</body>
-</html>
+            <input type="file" id="import
