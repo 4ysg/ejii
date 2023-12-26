@@ -152,18 +152,12 @@
         const importInput = document.getElementById('importInput');
         const toggleModeButton = document.getElementById('toggleMode');
         const eraserButton = document.getElementById('eraserButton');
-        const bucketButton = document.getElementById('bucketButton');
         let isDrawing = false;
         let isErasing = false;
-        let isBucketToolActive = false;
 
         function startDrawing(e) {
             isDrawing = true;
-            if (isBucketToolActive) {
-                fillBucket(e);
-            } else {
-                draw(e);
-            }
+            draw(e);
         }
 
         function stopDrawing() {
@@ -240,15 +234,6 @@
         function toggleEraser() {
             isErasing = !isErasing;
             eraserButton.classList.toggle('active', isErasing);
-            bucketButton.classList.remove('active');
-            isBucketToolActive = false;
-        }
-
-        function toggleBucket() {
-            isBucketToolActive = !isBucketToolActive;
-            bucketButton.classList.toggle('active', isBucketToolActive);
-            eraserButton.classList.remove('active');
-            isErasing = false;
         }
 
         function updateCursor(e) {
@@ -257,77 +242,6 @@
             const y = e.clientY - rect.top;
 
             document.getElementById('drawingCanvas').style.cursor = `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="%23${$('#colorPicker').spectrum('get').toHex()}" viewBox="0 0 16 16"><circle cx="8" cy="8" r="${thicknessSlider.value / 2}" /></svg>') ${x} ${y}, auto`;
-        }
-
-        function fillBucket(e) {
-            if (!isBucketToolActive) return;
-
-            const rect = canvas.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-
-            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            const targetColor = getPixelColor(imageData, x, y);
-
-            floodFill(imageData, x, y, targetColor);
-            ctx.putImageData(imageData, 0, 0);
-
-            isBucketToolActive = false;
-            bucketButton.classList.remove('active');
-        }
-
-        function getPixelColor(imageData, x, y) {
-            const index = (y * imageData.width + x) * 4;
-            return {
-                r: imageData.data[index],
-                g: imageData.data[index + 1],
-                b: imageData.data[index + 2],
-                a: imageData.data[index + 3]
-            };
-        }
-
-        function setPixelColor(imageData, x, y, color) {
-            const index = (y * imageData.width + x) * 4;
-            imageData.data[index] = color.r;
-            imageData.data[index + 1] = color.g;
-            imageData.data[index + 2] = color.b;
-            imageData.data[index + 3] = color.a;
-        }
-
-        function isSameColor(color1, color2) {
-            return color1.r === color2.r && color1.g === color2.g && color1.b === color2.b && color1.a === color2.a;
-        }
-
-        function floodFill(imageData, x, y, targetColor) {
-            const stack = [];
-            const startColor = getPixelColor(imageData, x, y);
-
-            if (isSameColor(startColor, targetColor)) {
-                return; // No need to fill if the target color is the same as the start color
-            }
-
-            stack.push({ x, y });
-
-            while (stack.length > 0) {
-                const { x, y } = stack.pop();
-
-                if (x < 0 || x >= imageData.width || y < 0 || y >= imageData.height) {
-                    continue;
-                }
-
-                const currentColor = getPixelColor(imageData, x, y);
-
-                if (!isSameColor(currentColor, startColor) || isSameColor(currentColor, targetColor)) {
-                    continue;
-                }
-
-                setPixelColor(imageData, x, y, targetColor);
-
-                stack.push({ x: x + 1, y });
-                stack.push({ x: x - 1, y });
-                stack.push({ x, y: y + 1 });
-                stack.push({ x, y: y - 1 });
-            }
         }
 
         exportButton.addEventListener('click', exportDrawing);
@@ -340,7 +254,6 @@
 
         toggleModeButton.addEventListener('click', toggleMode);
         eraserButton.addEventListener('click', toggleEraser);
-        bucketButton.addEventListener('click', toggleBucket);
 
         $('#colorPicker').spectrum({
             type: "color",
