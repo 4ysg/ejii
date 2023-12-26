@@ -143,206 +143,213 @@
     <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/spectrum/1.8.1/spectrum.min.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const canvas = document.getElementById('drawingCanvas');
-            const ctx = canvas.getContext('2d');
-            const thicknessSlider = document.getElementById('thicknessSlider');
-            const opacitySlider = document.getElementById('opacitySlider');
-            const exportButton = document.getElementById('exportButton');
-            const importInput = document.getElementById('importInput');
-            const toggleModeButton = document.getElementById('toggleMode');
-            const eraserButton = document.getElementById('eraserButton');
-            const bucketButton = document.getElementById('bucketButton');
-            let isDrawing = false;
-            let isErasing = false;
-            let isBucketToolActive = false;
+    document.addEventListener('DOMContentLoaded', function () {
+        const canvas = document.getElementById('drawingCanvas');
+        const ctx = canvas.getContext('2d');
+        const thicknessSlider = document.getElementById('thicknessSlider');
+        const opacitySlider = document.getElementById('opacitySlider');
+        const exportButton = document.getElementById('exportButton');
+        const importInput = document.getElementById('importInput');
+        const toggleModeButton = document.getElementById('toggleMode');
+        const eraserButton = document.getElementById('eraserButton');
+        const bucketButton = document.getElementById('bucketButton');
+        let isDrawing = false;
+        let isErasing = false;
+        let isBucketToolActive = false;
 
-            function startDrawing(e) {
-                isDrawing = true;
-                if (isBucketToolActive) {
-                    fillBucket(e);
-                } else {
-                    draw(e);
-                }
+        function startDrawing(e) {
+            isDrawing = true;
+            if (isBucketToolActive) {
+                fillBucket(e);
+            } else {
+                draw(e);
             }
+        }
 
-            function stopDrawing() {
-                isDrawing = false;
-                ctx.beginPath();
+        function stopDrawing() {
+            isDrawing = false;
+            ctx.beginPath();
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+
+            ctx.lineWidth = thicknessSlider.value;
+            if (isErasing) {
+                ctx.globalCompositeOperation = 'destination-out';
+            } else {
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.strokeStyle = $('#colorPicker').spectrum('get').toHexString();
             }
+            ctx.globalAlpha = opacitySlider.value;
 
-            function draw(e) {
-                if (!isDrawing) return;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
 
-                ctx.lineWidth = thicknessSlider.value;
-                if (isErasing) {
-                    ctx.globalCompositeOperation = 'destination-out';
-                } else {
-                    ctx.globalCompositeOperation = 'source-over';
-                    ctx.strokeStyle = $('#colorPicker').spectrum('get').toHexString();
-                }
-                ctx.globalAlpha = opacitySlider.value;
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
 
-                ctx.lineCap = 'round';
-                ctx.lineJoin = 'round';
+            ctx.lineTo(x, y);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+        }
 
-                const rect = canvas.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
+        function changeThickness() {
+            ctx.lineWidth = thicknessSlider.value;
+        }
 
-                ctx.lineTo(x, y);
-                ctx.stroke();
-                ctx.beginPath();
-                ctx.moveTo(x, y);
-            }
+        function changeOpacity() {
+            ctx.globalAlpha = opacitySlider.value;
+        }
 
-            function changeThickness() {
-                ctx.lineWidth = thicknessSlider.value;
-            }
+        function exportDrawing() {
+            const fileName = prompt('Enter a filename');
+            if (!fileName) return;
 
-            function changeOpacity() {
-                ctx.globalAlpha = opacitySlider.value;
-            }
+            const prefix = fileName.replace(/\.[^/.]+$/, '');
+            const suffix = ".e7446dshwjsuauwzsduyauw";
+            const dataURL = canvas.toDataURL();
+            const a = document.createElement('a');
+            a.href = dataURL;
+            a.download = prefix + suffix;
+            a.click();
+        }
 
-            function exportDrawing() {
-                const fileName = prompt('Enter a filename');
-                if (!fileName) return;
+        function importDrawing() {
+            const file = importInput.files[0];
 
-                const prefix = fileName.replace(/\.[^/.]+$/, '');
-                const suffix = ".e7446dshwjsuauwzsduyauw";
-                const dataURL = canvas.toDataURL();
-                const a = document.createElement('a');
-                a.href = dataURL;
-                a.download = prefix + suffix;
-                a.click();
-            }
-
-            function importDrawing() {
-                const file = importInput.files[0];
-
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = function (e) {
-                        const img = new Image();
-                        img.onload = function () {
-                            ctx.drawImage(img, 0, 0);
-                        };
-                        img.src = e.target.result;
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    const img = new Image();
+                    img.onload = function () {
+                        ctx.drawImage(img, 0, 0);
                     };
-                    reader.readAsDataURL(file);
-                }
-            }
-
-            function toggleMode() {
-                document.body.classList.toggle('dark-mode');
-            }
-
-            function toggleEraser() {
-                isErasing = !isErasing;
-                eraserButton.classList.toggle('active', isErasing);
-            }
-
-            function toggleBucket() {
-                isBucketToolActive = !isBucketToolActive;
-                bucketButton.classList.toggle('active', isBucketToolActive);
-            }
-
-            function updateCursor(e) {
-                const rect = canvas.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
-
-                document.getElementById('drawingCanvas').style.cursor = `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="%23${$('#colorPicker').spectrum('get').toHex()}" viewBox="0 0 16 16"><circle cx="8" cy="8" r="${thicknessSlider.value / 2}" /></svg>') ${x} ${y}, auto`;
-            }
-
-            function fillBucket(e) {
-                if (!isBucketToolActive) return;
-
-                const rect = canvas.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
-
-                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                const targetColor = getPixelColor(imageData, x, y);
-
-                floodFill(imageData, x, y, targetColor);
-                ctx.putImageData(imageData, 0, 0);
-
-                isBucketToolActive = false;
-                bucketButton.classList.remove('active');
-            }
-
-            function getPixelColor(imageData, x, y) {
-                const index = (y * imageData.width + x) * 4;
-                return {
-                    r: imageData.data[index],
-                    g: imageData.data[index + 1],
-                    b: imageData.data[index + 2],
-                    a: imageData.data[index + 3]
+                    img.src = e.target.result;
                 };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function toggleMode() {
+            document.body.classList.toggle('dark-mode');
+        }
+
+        function toggleEraser() {
+            isErasing = !isErasing;
+            eraserButton.classList.toggle('active', isErasing);
+            bucketButton.classList.remove('active');
+            isBucketToolActive = false;
+        }
+
+        function toggleBucket() {
+            isBucketToolActive = !isBucketToolActive;
+            bucketButton.classList.toggle('active', isBucketToolActive);
+            eraserButton.classList.remove('active');
+            isErasing = false;
+        }
+
+        function updateCursor(e) {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            document.getElementById('drawingCanvas').style.cursor = `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="%23${$('#colorPicker').spectrum('get').toHex()}" viewBox="0 0 16 16"><circle cx="8" cy="8" r="${thicknessSlider.value / 2}" /></svg>') ${x} ${y}, auto`;
+        }
+
+        function fillBucket(e) {
+            if (!isBucketToolActive) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const targetColor = getPixelColor(imageData, x, y);
+
+            floodFill(imageData, x, y, targetColor);
+            ctx.putImageData(imageData, 0, 0);
+
+            isBucketToolActive = false;
+            bucketButton.classList.remove('active');
+        }
+
+        function getPixelColor(imageData, x, y) {
+            const index = (y * imageData.width + x) * 4;
+            return {
+                r: imageData.data[index],
+                g: imageData.data[index + 1],
+                b: imageData.data[index + 2],
+                a: imageData.data[index + 3]
+            };
+        }
+
+        function setPixelColor(imageData, x, y, color) {
+            const index = (y * imageData.width + x) * 4;
+            imageData.data[index] = color.r;
+            imageData.data[index + 1] = color.g;
+            imageData.data[index + 2] = color.b;
+            imageData.data[index + 3] = color.a;
+        }
+
+        function isSameColor(color1, color2) {
+            return color1.r === color2.r && color1.g === color2.g && color1.b === color2.b && color1.a === color2.a;
+        }
+
+        function floodFill(imageData, x, y, targetColor) {
+            const stack = [];
+            const startColor = getPixelColor(imageData, x, y);
+
+            if (isSameColor(startColor, targetColor)) {
+                return; // No need to fill if the target color is the same as the start color
             }
 
-            function setPixelColor(imageData, x, y, color) {
-                const index = (y * imageData.width + x) * 4;
-                imageData.data[index] = color.r;
-                imageData.data[index + 1] = color.g;
-                imageData.data[index + 2] = color.b;
-                imageData.data[index + 3] = color.a;
-            }
+            stack.push({ x, y });
 
-            function isSameColor(color1, color2) {
-                return color1.r === color2.r && color1.g === color2.g && color1.b === color2.b && color1.a === color2.a;
-            }
+            while (stack.length > 0) {
+                const { x, y } = stack.pop();
 
-            function floodFill(imageData, x, y, targetColor) {
-                const stack = [];
-                const startColor = getPixelColor(imageData, x, y);
-
-                if (isSameColor(startColor, targetColor)) {
-                    return; // No need to fill if the target color is the same as the start color
+                if (x < 0 || x >= imageData.width || y < 0 || y >= imageData.height) {
+                    continue;
                 }
 
-                stack.push({ x, y });
+                const currentColor = getPixelColor(imageData, x, y);
 
-                while (stack.length > 0) {
-                    const { x, y } = stack.pop();
-
-                    if (x < 0 || x >= imageData.width || y < 0 || y >= imageData.height) {
-                        continue;
-                    }
-
-                    const currentColor = getPixelColor(imageData, x, y);
-
-                    if (!isSameColor(currentColor, startColor) || isSameColor(currentColor, targetColor)) {
-                        continue;
-                    }
-
-                    setPixelColor(imageData, x, y, targetColor);
-
-                    stack.push({ x: x + 1, y });
-                    stack.push({ x: x - 1, y });
-                    stack.push({ x, y: y + 1 });
-                    stack.push({
-                    x, y: y - 1 });
+                if (!isSameColor(currentColor, startColor) || isSameColor(currentColor, targetColor)) {
+                    continue;
                 }
+
+                setPixelColor(imageData, x, y, targetColor);
+
+                stack.push({ x: x + 1, y });
+                stack.push({ x: x - 1, y });
+                stack.push({ x, y: y + 1 });
+                stack.push({ x, y: y - 1 });
             }
+        }
 
-            exportButton.addEventListener('click', exportDrawing);
-            importInput.addEventListener('change', importDrawing);
+        exportButton.addEventListener('click', exportDrawing);
+        importInput.addEventListener('change', importDrawing);
 
-            canvas.addEventListener('mousedown', startDrawing);
-            canvas.addEventListener('mousemove', draw);
-            canvas.addEventListener('mouseup', stopDrawing);
-            canvas.addEventListener('mouseout', stopDrawing);
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseout', stopDrawing);
 
-            $('#colorPicker').spectrum({
-                type: "color",
-                showPalette: false,
-                showButtons: false,
-                showInput: true,
-                preferredFormat: "hex"
-            });
+        toggleModeButton.addEventListener('click', toggleMode);
+        eraserButton.addEventListener('click', toggleEraser);
+        bucketButton.addEventListener('click', toggleBucket);
+
+        $('#colorPicker').spectrum({
+            type: "color",
+            showPalette: false,
+            showButtons: false,
+            showInput: true,
+            preferredFormat: "hex"
         });
-    </script>
+    });
+</script>
 </body>
 </html>
