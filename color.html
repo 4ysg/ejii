@@ -13,6 +13,8 @@
             height: 100vh;
             margin: 0;
             font-family: 'Arial', sans-serif;
+            background-color: #1a1a1a;
+            color: #fff;
         }
 
         #controls {
@@ -25,16 +27,27 @@
             border: 1px solid #ddd;
             margin-top: 20px;
             cursor: crosshair;
+            background-color: #fff; /* Canvas background color */
         }
 
         input[type="range"], input[type="color"] {
             width: 150px;
+            margin-bottom: 5px;
         }
 
         button, input[type="file"] {
             padding: 10px;
             font-size: 16px;
             cursor: pointer;
+            background-color: #3498db;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+
+        button:hover, input[type="file"]:hover {
+            background-color: #2980b9;
         }
     </style>
     <title>Draw and Save</title>
@@ -49,7 +62,7 @@
         <input type="range" id="opacitySlider" min="0" max="1" step="0.1" value="1" onchange="changeOpacity()">
         <button id="exportButton" onclick="exportDrawing()"><i class="fas fa-download"></i> Export</button>
         <label for="importInput" class="button"><i class="fas fa-upload"></i> Import</label>
-        <input type="file" id="importInput" accept=".e39d9kawiai3uau339a2q" onchange="importDrawing()">
+        <input type="file" id="importInput" accept=".zwi8w8377xnqjkxia97w7xnwqii299s8w8kccwcw93i9csx-encrypt-file-3847xnwxshx" onchange="importDrawing()">
     </div>
     <canvas id="drawingCanvas" width="800" height="600"></canvas>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jscolor/2.4.5/jscolor.min.js"></script>
@@ -103,10 +116,11 @@
             }
 
             function exportDrawing() {
+                const prefix = ".zwi8w8377xnqjkxia97w7xnwqii299s8w8kccwcw93i9csx-encrypt-file-3847xnwxshx";
                 const dataURL = canvas.toDataURL();
                 const a = document.createElement('a');
                 a.href = dataURL;
-                a.download = prompt('Enter a name for your drawing') + '.png';
+                a.download = prefix + '_drawing.png';
                 a.click();
             }
 
