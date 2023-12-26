@@ -121,7 +121,7 @@
             <div id="app-title">
                 <i class="fas fa-paint-brush"></i> Artistic Canvas
             </div>
-            <button id="toggleMode" onclick="toggleMode()">Toggle Mode</button>
+            <!-- The toggleMode button is removed from here -->
             <button id="eraserButton" onclick="toggleEraser()">Eraser</button>
             <button id="bucketButton" onclick="toggleBucket()">Bucket</button>
         </div>
@@ -135,7 +135,7 @@
             <button id="exportButton"><i class="fas fa-download"></i> Export Masterpiece</button>
             <label for="importInput" class="button"><i class="fas fa-upload"></i> Import Artwork</label>
             <input type="file" id="importInput" accept=".e7446dshwjsuauwzsduyauw" onchange="importDrawing()">
-        </div>
+       </div>
         <div id="canvas-container">
             <canvas id="drawingCanvas" width="1200" height="800" onmousemove="updateCursor(event)" onclick="fillBucket(event)"></canvas>
         </div>
