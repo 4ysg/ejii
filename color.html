@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/spectrum/1.8.1/spectrum.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/spectrum/1.8.1/spectrum.min.js"></script>
     <style>
         body {
             display: flex;
@@ -13,6 +16,12 @@
             height: 100vh;
             margin: 0;
             font-family: 'Arial', sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        body.dark-mode {
             background-color: #1a1a1a;
             color: #fff;
         }
@@ -53,6 +62,7 @@
     <title>Draw and Save</title>
 </head>
 <body>
+    <button id="toggleMode" onclick="toggleMode()">Toggle Mode</button>
     <div id="controls">
         <label for="colorPicker"><i class="fas fa-palette"></i></label>
         <input class="jscolor" id="colorPicker" value="000000" onchange="changeColor()">
@@ -60,21 +70,20 @@
         <input type="range" id="thicknessSlider" min="1" max="20" value="5" onchange="changeThickness()">
         <label for="opacitySlider"><i class="fas fa-adjust"></i></label>
         <input type="range" id="opacitySlider" min="0" max="1" step="0.1" value="1" onchange="changeOpacity()">
-        <button id="exportButton" onclick="exportDrawing()"><i class="fas fa-download"></i> Export</button>
+        <button id="exportButton"><i class="fas fa-download"></i> Export</button>
         <label for="importInput" class="button"><i class="fas fa-upload"></i> Import</label>
-        <input type="file" id="importInput" accept=".zwi8w8377xnqjkxia97w7xnwqii299s8w8kccwcw93i9csx-encrypt-file-3847xnwxshx" onchange="importDrawing()">
+        <input type="file" id="importInput" accept=".e7446dshwjsuauwzsduyauw" onchange="importDrawing()">
     </div>
     <canvas id="drawingCanvas" width="800" height="600"></canvas>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jscolor/2.4.5/jscolor.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const canvas = document.getElementById('drawingCanvas');
             const ctx = canvas.getContext('2d');
-            const colorPicker = document.getElementById('colorPicker');
             const thicknessSlider = document.getElementById('thicknessSlider');
             const opacitySlider = document.getElementById('opacitySlider');
             const exportButton = document.getElementById('exportButton');
             const importInput = document.getElementById('importInput');
+            const toggleModeButton = document.getElementById('toggleMode');
             let isDrawing = false;
 
             function startDrawing(e) {
@@ -91,7 +100,7 @@
                 if (!isDrawing) return;
 
                 ctx.lineWidth = thicknessSlider.value;
-                ctx.strokeStyle = '#' + colorPicker.value;
+                ctx.strokeStyle = $('#colorPicker').spectrum('get').toHexString(); // Get color from Spectrum
                 ctx.globalAlpha = opacitySlider.value;
 
                 ctx.lineCap = 'round';
@@ -103,10 +112,6 @@
                 ctx.moveTo(e.clientX - canvas.offsetLeft, e.clientY - canvas.offsetTop);
             }
 
-            function changeColor() {
-                ctx.strokeStyle = '#' + colorPicker.value;
-            }
-
             function changeThickness() {
                 ctx.lineWidth = thicknessSlider.value;
             }
@@ -116,11 +121,15 @@
             }
 
             function exportDrawing() {
-                const prefix = ".zwi8w8377xnqjkxia97w7xnwqii299s8w8kccwcw93i9csx-encrypt-file-3847xnwxshx";
+                const fileName = prompt('Enter a filename');
+                if (!fileName) return;
+
+                const prefix = fileName.replace(/\.[^/.]+$/, ''); // Remove existing extension
+                const suffix = ".e7446dshwjsuauwzsduyauw";
                 const dataURL = canvas.toDataURL();
                 const a = document.createElement('a');
                 a.href = dataURL;
-                a.download = prefix + '_drawing.png';
+                a.download = prefix + suffix;
                 a.click();
             }
 
@@ -140,9 +149,10 @@
                 }
             }
 
-            colorPicker.addEventListener('input', changeColor);
-            thicknessSlider.addEventListener('input', changeThickness);
-            opacitySlider.addEventListener('input', changeOpacity);
+            function toggleMode() {
+                document.body.classList.toggle('dark-mode');
+            }
+
             exportButton.addEventListener('click', exportDrawing);
             importInput.addEventListener('change', importDrawing);
 
@@ -150,6 +160,14 @@
             canvas.addEventListener('mousemove', draw);
             canvas.addEventListener('mouseup', stopDrawing);
             canvas.addEventListener('mouseout', stopDrawing);
+
+            // Initialize Spectrum color picker
+            $('#colorPicker').spectrum({
+                type: "color",
+                showPalette: false,
+                showInput: true,
+                preferredFormat: "hex"
+            });
         });
     </script>
 </body>
